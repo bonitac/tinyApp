@@ -3,10 +3,10 @@ var app = express();
 var PORT = 8080; // default port 8080
 app.set('view engine', 'ejs');
 
-// var urlDatabase = [
-//   {short: "b2xVn2", long:"http://www.lighthouselabs.ca"},
-//   {short: "9sm5xK", long: "http://www.google.com"}
-// ];
+var urlDatabase2 = [
+  {short: "b2xVn2", long:"http://www.lighthouselabs.ca"},
+  {short: "9sm5xK", long: "http://www.google.com"}
+];
 
 var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -22,7 +22,7 @@ app.listen(PORT, () => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase2 };
   res.render("urls_index", templateVars);
 });
 
