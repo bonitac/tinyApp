@@ -17,9 +17,9 @@
       <h4>  <a href='/urls/new'> Create New TinyURL </a> </h2>
         <h3> My URLs</h3>
         <% for (let i in urls){ %>
-          <li> <%= i %>: <%= urls[i] %> </li> 
+          <li> <a href='/urls/<%=i%>'><%= i %></a>: <%= urls[i] %> </li> 
           <form method="delete" action='/urls/<%= i %>/delete'Delete </form>
-          <button type="delete" class="btn btn-primary"><form method="GET" action=>Delete 🗑</form>
+          <button class="btn btn-primary"><form method="GET" action=>Delete 🗑</form>
           </button>
           <% }; %> 
 

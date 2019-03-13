@@ -30,34 +30,42 @@ app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
+
 //Add new URL
 app.get("/urls/new", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_new", templateVars);
 });
+
 //Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
-  let newLong = req.body.longURL;
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = newLong;
-  let templateVars = { longURL: newLong, shortURL:shortURL};
+  urlDatabase[shortURL] = req.body.longURL;
+  let templateVars = { longURL: urlDatabase[shortURL], shortURL:shortURL};
   res.redirect(`urls/${shortURL}`);
 });
+
 // Delete an existing URL
 app.get('/urls/:shortURL/delete', (req,res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
+
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
+
 //Edit the longURL on an individual page
 app.post("/urls/:shortURL", (req,res) => {
-  const newLong = req.body;
-  console.log(newLong)
+  console.log(req.body)
+  const {shortURL} = req.params;
+  urlDatabase[shortURL] = req.body.newlongURL;
+  console.log(urlDatabase)
+  res.redirect(`/urls/${shortURL}`);
 })
+
 //redirect from individual on click
 app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
