@@ -15,8 +15,10 @@
       <% include ./partials/_header %>
     </header>
     
-      <h4>  <a href='#'> Create New TinyURL </a> </h4>
+      <h4>  <a href='/urls/new'> Create New TinyURL </a> </h4>
         <h3> Tiny URL for <%= longURL %></h3>
-        <h3><%= shortURL %></h3>
+        <h3><a href = '/u/<%= shortURL %>'><%= shortURL %> </a></h3>
+        <form method="index" action='/urls'Index</form>
+          <button type="index" class="btn btn-secondary">Index</button>
 </body>
 </html>
