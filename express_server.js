@@ -4,6 +4,9 @@ var PORT = 8080; // default port 8080
 app.set('view engine', 'ejs');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+var cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 
 var urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -27,8 +30,12 @@ app.get("/", (req, res) => {
 
 //Index page
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase,
+    username: req.cookies["username"] };
   res.render("urls_index", templateVars);
+  res.render("/partials/_header", templateVars);
+  res.render("urls_new", templateVars);
+  res.render("urls_show", templateVars);
 });
 
 //Add new URL
@@ -69,3 +76,8 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
 });
 
+//Add login capability
+app.post("/login", (req,res) =>{
+  res.cookie('username',req.body.username);
+  res.redirect('/urls')
+});

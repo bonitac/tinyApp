@@ -18,7 +18,7 @@
         <h3> My URLs</h3>
         <% for (let i in urls){ %>
           <li> <a href='/urls/<%=i%>'><%= i %></a>: <%= urls[i] %> </li> 
-          <form method="delete" action='/urls/<%= i %>/delete'Delete </form>
+          <form method="get" action='/urls/<%= i %>/delete'Delete </form>
           <button class="btn btn-primary"><form method="GET" action=>Delete 🗑</form>
           </button>
           <% }; %> 
