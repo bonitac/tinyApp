@@ -38,8 +38,11 @@ app.post("/urls", (req, res) => {
   // console.log(req.body);  // Log the POST request body to the console
   //   res.send("Ok");         // Respond with 'Ok' (we will replace this)
   // console.log(req);
-  let newLong = req.body;
-  let templateVars = { longURL: newLong.longURL};
+  let newLong = req.body.longURL;
+  let randomString = generateRandomString();
+  urlDatabase[randomString] = newLong;
+  console.log(urlDatabase)
+  let templateVars = { longURL: newLong, randomString:randomString};
   res.render("urls_new",templateVars)
 });
 
