@@ -59,10 +59,8 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //Edit the longURL on an individual page
 app.post("/urls/:shortURL", (req,res) => {
-  console.log(req.body)
   const {shortURL} = req.params;
   urlDatabase[shortURL] = req.body.newlongURL;
-  console.log(urlDatabase)
   res.redirect(`/urls/${shortURL}`);
 })
 
