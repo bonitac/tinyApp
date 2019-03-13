@@ -10,24 +10,32 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (req, res) => {
-  res.send("Hello! This is the Home Page of Tiny App");
-});
+//Generate new shortURL
+function generateRandomString() {
+  return Math.floor((1 + Math.random()) * 0x100000).toString(16).substring(0); 
+}
 
+//Listening
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+//Home Page
+app.get("/", (req, res) => {
+  res.send("Hello! This is the Home Page of Tiny App");
+});
+
+//Index page
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
-
+//Add new URL
 app.get("/urls/new", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_new", templateVars);
 });
-
+//Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
   let newLong = req.body.longURL;
   let shortURL = generateRandomString();
@@ -35,23 +43,23 @@ app.post("/urls", (req, res) => {
   let templateVars = { longURL: newLong, shortURL:shortURL};
   res.redirect(`urls/${shortURL}`);
 });
-
+// Delete an existing URL
 app.get('/urls/:shortURL/delete', (req,res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
 });
-
+// Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
-
+//Edit the longURL on an individual page
+app.post("/urls/:shortURL", (req,res) => {
+  const newLong = req.body;
+  console.log(newLong)
+})
+//redirect from individual on click
 app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
 });
 
-
-
-function generateRandomString() {
-  return Math.floor((1 + Math.random()) * 0x100000).toString(16).substring(0); 
-}
