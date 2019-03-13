@@ -19,6 +19,9 @@
         <h3> Tiny URL for <%= longURL %></h3>
         <h3><a href = '/u/<%= shortURL %>'><%= shortURL %> </a></h3>
         <form method="index" action='/urls'Index</form>
-          <button type="index" class="btn btn-secondary">Index</button>
+        <button type="index" class="btn btn-secondary">Index</button>
+        <form method="edit" action='/urls/:shortURL'Edit</form>
+          <input class="edit-data" type="text" name="longURL" placeholder="http://" style="width: 300px; margin: 1em">
+        <button type="edit" class="btn btn-secondary">Edit</button>
 </body>
 </html>
