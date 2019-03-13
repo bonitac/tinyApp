@@ -83,3 +83,7 @@ app.post("/login", (req,res) =>{
 });
 
 //Add Logout Capability
+app.post("/logout", (req,res)=>{
+  res.clearCookie('username');
+  res.redirect('/urls')
+})
