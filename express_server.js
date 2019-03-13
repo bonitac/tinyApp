@@ -26,9 +26,15 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+app.get("/urls/new", (req, res) => {
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  res.render("urls_new", templateVars);
+});
+
 app.get("/urls/:shortURL", (req, res) => {
   // console.log(req);
   // console.log(urlDatabase[req.params.shortURL])
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
+
