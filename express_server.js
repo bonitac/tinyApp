@@ -13,10 +13,29 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 //Generate new shortURL
 function generateRandomString() {
   return Math.floor((1 + Math.random()) * 0x100000).toString(16).substring(0); 
 }
+
+// function emailLookup(emailAddress){
+//   for (const i = 0; i < emailAddress.length; i++){
+//     // if (emailAddress[i] == )
+//   }
+// }
 
 //Listening
 app.listen(PORT, () => {
@@ -31,13 +50,15 @@ app.get("/", (req, res) => {
 //Index page
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase,
-    username: req.cookies["username"] };
+    user_id: req.cookies["user_id"],
+    email: req.body["email"]
+  };
   res.render("urls_index", templateVars);
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  let templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], email: req.body["email"]};
   res.render("urls_new", templateVars);
 });
 
@@ -56,7 +77,7 @@ app.get('/urls/:shortURL/delete', (req,res) => {
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  let templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
 
@@ -72,14 +93,57 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(urlDatabase[req.params.shortURL]);
 });
 
+//Go to log-in page
+app.get("/login",(req,res) =>{
+  // const user_id = generateRandomString();
+  // res.cookie('user_id',user_id);
+  let templateVars = {user_id: users.user_id, email:req.body.email};
+  res.render("login",templateVars)
+})
+
 //Add login capability
 app.post("/login", (req,res) =>{
-  res.cookie('username',req.body.username);
-  res.redirect('/urls')
+  const user = {user_id:req.cookies.user_id, email:req.body.email, password:req.body.password};
+  if (users.user && users.user.password === req.body.password){ //if username exists && users[username] -> false if one is false
+    res.cookie('user_id',req.body.userID);
+    res.redirect('/urls')
+  } else{
+    res.clearCookie('user_id');
+    res.redirect('/login') //render instead to have an error message
+  }
 });
 
 //Add Logout Capability
 app.post("/logout", (req,res)=>{
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls')
+})
+
+//Add Registration Page
+app.get("/register", (req,res)=>{
+  let templateVars = {user_id: users.user_id, email:req.body.email};
+  res.render('register',templateVars);
+})
+
+//Registration handler
+app.post("/register", (req,res)=> {
+  if (req.body.email === "" || req.body.password === ""){
+    res.statusCode = 400
+    res.send(`${res.statusCode} Error: Email or Password are empty`);
+  // } else if (!emailLookup(newUser.email)){
+  //   res.statusCode = 400
+  //   res.send(`${res.statusCode}  Error: Invalid Email`);
+  }
+  for (user in users){
+    if (users[user].email === req.body.email){
+      res.statusCode = 400;
+      res.send(`${res.statusCode}  Error: Email already registered`)
+    }
+  }  
+  
+  const user_id = generateRandomString()
+  let newUser = {user_id:user_id, email:req.body.email, password:req.body.password};
+  res.cookie('user_id', user_id);
+  users[newUser.user_id] = newUser;
+  res.redirect('/urls');
 })
