@@ -53,7 +53,6 @@ function emailLookup(emailAddress,req,res){
       return 1; //duplicate email or found email
     }
   }
-  console.log(match)
   return 1; //truthy
 }
 
@@ -192,7 +191,8 @@ app.post("/register", (req,res)=> {
     return res.send("Email already registered") //stick the error messages in the header
   }
   const id = generateRandomString();
-  let newUser = {id:id, email:req.body.email, password:req.body.password};
+  let newUser = {id:id, email:req.body.email, password:bcrypt.hashSync(req.body.password,10)};
+  console.log(newUser.password)
   res.cookie('id', id);
   users[newUser.id] = newUser;
   return res.render('urls_index',{id: users.id, email:req.body.email,urls: urlDatabase});
