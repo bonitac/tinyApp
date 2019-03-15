@@ -18,10 +18,10 @@ const urlDatabase = {
 };
 
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: "qwer"
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -38,14 +38,18 @@ function generateRandomString() {
 function emailLookup(emailAddress,req,res){
   if (emailAddress === ""){
     res.statusCode = 400;
+    console.log("no email")
     return 0;
   }
   for (user in users){
     if (users[user].email === emailAddress){
       res.statusCode = 400;
-      return 0; //falsy
+      // console.log("email not found")
+      // console.log(users[user].email)
+      return 1; //duplicate email or found email
     }
   }
+  console.log(match)
   return 1; //truthy
 }
 
@@ -56,6 +60,17 @@ function findUser(parameter,req){
         return user;
     }
   }
+}
+
+function urlsForUser(id){
+  let urls = {};
+  for (url in urlDatabase){
+    if (urlDatabase[url].userID === id){
+      const validURL = urlDatabase[url].longURL;
+      urls[url] = validURL
+    }
+  }
+  return urls;
 }
 
 //Listening
@@ -101,18 +116,23 @@ app.post("/urls", (req, res) => {
       return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, email:thisEmail});
     }
   }
-  
 });
 
 // Delete an existing URL
-app.get('/urls/:shortURL/delete', (req,res) => {
-  delete urlDatabase[req.params.shortURL];
-  return res.redirect('/urls');
+app.post('/urls/:shortURL/delete', (req,res) => {
+  // console.log(urlDatabase[req.params.shortURL].userID)
+  // console.log("cookie",req.cookies.id)
+  if (req.cookies.id === urlDatabase[req.params.shortURL].userID){
+    delete urlDatabase[req.params.shortURL];
+    return res.redirect('/urls');
+  } else{
+    res.send("go log in!") //render to log in page
+  }
 });
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { id: req.cookies["id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  let templateVars = { id: req.cookies["id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.cookies.id.email};
   return res.render("urls_show", templateVars);
 });
 
@@ -125,7 +145,7 @@ app.post("/urls/:shortURL", (req,res) => {
 
 //redirect from individual on click
 app.get("/u/:shortURL", (req, res) => {
-  return res.redirect(urlDatabase[req.params.shortURL]);
+  return res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
 //Go to log-in page
@@ -141,12 +161,13 @@ app.post("/login", (req,res) =>{
   }
   const loginID = findUser(req.body.email,req);
   if (users[loginID] && users[loginID].password === req.body.password){
-    console.log(users[loginID].id)
+    // console.log(users[loginID].id)
     res.cookie('id', users[loginID].id);//
+    console.log(req.cookie)
     return res.render('urls_index',{id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
   } else{
-    res.clearCookie('id');
-    return res.render('login',{errorMessage:""}); //render instead to have an error message
+    // return res.render('login',{errorMessage:""}); //render instead to have an error message
+    return res.send("failed to log in")
   }
 });
 

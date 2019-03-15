@@ -18,8 +18,8 @@
         <h3> My URLs</h3>
         <% for (let i in urls){ %>
           <li> <a href='/urls/<%=i%>'> <%= i %> </a>: <%= urls[i].longURL %> </li> 
-          <form method="get" action='/urls/<%= i %>/delete'Delete </form>
-          <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="GET" action=>Delete 🗑</form>
+          <form method="post" action='/urls/<%= i %>/delete'Delete </form>
+          <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="POST" action=>Delete 🗑</form>
           </button>
           <% }; %> 
 
