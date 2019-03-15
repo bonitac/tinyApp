@@ -7,9 +7,14 @@ app.use(bodyParser.urlencoded({extended: true}));
 var cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = { 
@@ -65,6 +70,7 @@ app.get("/", (req, res) => {
 
 //Index page
 app.get("/urls", (req, res) => {
+  // console.log(urlDatabase["b6UTxQ"].longURL)
   let templateVars = { urls: urlDatabase,
     id: users.id,
     email: req.body.email
@@ -74,15 +80,28 @@ app.get("/urls", (req, res) => {
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { id: req.cookies["id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], email: req.body["email"]};
+  // console.log(req)
+  let templateVars = { id: req.cookies["id"],
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL],
+    email: req.body["email"]};
   return res.render("urls_new", templateVars);
 });
 
 //Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  return res.redirect(`urls/${shortURL}`);
+  urlDatabase[shortURL] = {};
+  urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[shortURL].userID = req.cookies.id;
+  // console.log(urlDatabase[shortURL]);
+  for (user in users){
+    if (users[user].id == req.cookies.id){
+      let thisEmail = users[user].email;
+      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, email:thisEmail});
+    }
+  }
+  
 });
 
 // Delete an existing URL

@@ -13,11 +13,11 @@
     <header>
         <% include ./partials/_header %>
       </header>
-      
+
       <h4>  <a href='/urls/new'> Create New TinyURL </a> </h2>
         <h3> My URLs</h3>
         <% for (let i in urls){ %>
-          <li> <a href='/urls/<%=i%>'><%= i %></a>: <%= urls[i] %> </li> 
+          <li> <a href='/urls/<%=i%>'> <%= i %> </a>: <%= urls[i].longURL %> </li> 
           <form method="get" action='/urls/<%= i %>/delete'Delete </form>
           <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="GET" action=>Delete 🗑</form>
           </button>
