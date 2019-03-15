@@ -4,19 +4,15 @@ var PORT = 8080; // default port 8080
 app.set('view engine', 'ejs');
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-var cookieParser = require('cookie-parser');
-app.use(cookieParser());
+
+var cookieSession = require('cookie-session')
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+  maxAge: 24 * 60 * 60 * 1000
+}))
 const bcrypt = require('bcrypt');
-const password = "purple-monkey-dinosaur"; // found in the req.params object
-const hashedPassword = bcrypt.hashSync(password, 10);
-
-// console.log(bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)); // returns true
-// console.log(bcrypt.compareSync("pink-donkey-minotaur", hashedPassword)); // returns false
-
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -24,8 +20,8 @@ const urlDatabase = {
 };
 
 const users = { 
-  "aJ48lW": {
-    id: "aJ48lW", 
+  "userRandomID": {
+    id: "userRandomID", 
     email: "user@example.com", 
     password: bcrypt.hashSync("qwer", 10)
   },
@@ -44,8 +40,7 @@ function generateRandomString() {
 function emailLookup(emailAddress,req,res){
   if (emailAddress === ""){
     res.statusCode = 400;
-    console.log("no email")
-    return 0;
+    return 0; //console.log("no email")
   }
   for (user in users){
     if (users[user].email === emailAddress){
@@ -53,12 +48,12 @@ function emailLookup(emailAddress,req,res){
       return 1; //duplicate email or found email
     }
   }
-  return 1; //truthy
+  return 0; //email typed in but not found
 }
 
 function findUser(parameter,req){
   for (user in users){
-    if (users[user].parameter == req.body.parameter){
+    if (users[user].parameter == req.session.parameter){
       let loginID = users[user].id //ID NOT USER_ID YOU NUMNUT
         return user;
     }
@@ -83,26 +78,29 @@ app.listen(PORT, () => {
 
 //Home Page
 app.get("/", (req, res) => {
-  return res.send("Hello! This is the Home Page of Tiny App");
+  if (!req.session){
+    return res.redirect('/login');
+  }
+  console.log(req);
+  return res.redirect('/urls');
 });
 
 //Index page
 app.get("/urls", (req, res) => {
   // console.log(urlDatabase["b6UTxQ"].longURL)
-  let templateVars = { urls: urlDatabase,
-    id: users.id,
-    email: req.body.email
-  };
-  return res.render("urls_index", templateVars);
+  if (req.session.id === undefined){
+    return res.redirect('/login')
+  }
+  return res.render("urls_index", { urls: urlDatabase, id: users.id, email: req.session.email });
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
   // console.log(req)
-  let templateVars = { id: req.cookies["id"],
+  let templateVars = { id: req.session.user_id,
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    email: req.body["email"]};
+    email: req.session.email};
   return res.render("urls_new", templateVars);
 });
 
@@ -111,21 +109,18 @@ app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = {};
   urlDatabase[shortURL].longURL = req.body.longURL;
-  urlDatabase[shortURL].userID = req.cookies.id;
-  // console.log(urlDatabase[shortURL]);
+  urlDatabase[shortURL].userID = req.session.user_id;
   for (user in users){
-    if (users[user].id == req.cookies.id){
-      let thisEmail = users[user].email;
-      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, email:thisEmail});
+    if (users[user].id == req.session.user_id){
+      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, email:users[user].email});
     }
   }
 });
 
 // Delete an existing URL
 app.post('/urls/:shortURL/delete', (req,res) => {
-  // console.log(urlDatabase[req.params.shortURL].userID)
-  // console.log("cookie",req.cookies.id)
-  if (req.cookies.id === urlDatabase[req.params.shortURL].userID){
+  console.log(urlDatabase[req.params.shortURL].userID)
+  if (req.session.user_id === urlDatabase[req.params.shortURL].userID){
     delete urlDatabase[req.params.shortURL];
     return res.redirect('/urls');
   } else{
@@ -135,7 +130,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { id: req.cookies["id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.cookies.id.email};
+  let templateVars = { id: req.session.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.session.user_id.email};
   return res.render("urls_show", templateVars);
 });
 
@@ -153,6 +148,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 //Go to log-in page
 app.get("/login",(req,res) =>{
+  // console.log(req)
   let templateVars = {id: users.id, email:req.body.email};
   return res.render("login",templateVars)
 })
@@ -165,7 +161,7 @@ app.post("/login", (req,res) =>{
   const loginID = findUser(req.body.email,req);
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
-    res.cookie('id', users[loginID].id);
+    req.session.user_id =  users[loginID].id;
     return res.render('urls_index',{id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
   } else{
     // return res.render('login',{errorMessage:""}); //render instead to have an error message
@@ -175,7 +171,7 @@ app.post("/login", (req,res) =>{
 
 //Add Logout Capability
 app.post("/logout", (req,res)=>{
-  res.clearCookie('id');
+  req.session = null;
   return res.redirect('/urls')
 })
 
@@ -192,8 +188,7 @@ app.post("/register", (req,res)=> {
   }
   const id = generateRandomString();
   let newUser = {id:id, email:req.body.email, password:bcrypt.hashSync(req.body.password,10)};
-  console.log(newUser.password)
-  res.cookie('id', id);
+  req.session.user_id = id;
   users[newUser.id] = newUser;
   return res.render('urls_index',{id: users.id, email:req.body.email,urls: urlDatabase});
 })
