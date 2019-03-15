@@ -6,6 +6,12 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 var cookieParser = require('cookie-parser');
 app.use(cookieParser());
+const bcrypt = require('bcrypt');
+const password = "purple-monkey-dinosaur"; // found in the req.params object
+const hashedPassword = bcrypt.hashSync(password, 10);
+
+// console.log(bcrypt.compareSync("purple-monkey-dinosaur", hashedPassword)); // returns true
+// console.log(bcrypt.compareSync("pink-donkey-minotaur", hashedPassword)); // returns false
 
 // const urlDatabase = {
 //   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -21,12 +27,12 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW", 
     email: "user@example.com", 
-    password: "qwer"
+    password: bcrypt.hashSync("qwer", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: bcrypt.hashSync("dishwasher-funk", 10)
   }
 }
 
@@ -44,8 +50,6 @@ function emailLookup(emailAddress,req,res){
   for (user in users){
     if (users[user].email === emailAddress){
       res.statusCode = 400;
-      // console.log("email not found")
-      // console.log(users[user].email)
       return 1; //duplicate email or found email
     }
   }
@@ -160,10 +164,9 @@ app.post("/login", (req,res) =>{
     return res.send(`${res.statusCode}: Email or password are missing`);
   }
   const loginID = findUser(req.body.email,req);
-  if (users[loginID] && users[loginID].password === req.body.password){
+  if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
-    res.cookie('id', users[loginID].id);//
-    console.log(req.cookie)
+    res.cookie('id', users[loginID].id);
     return res.render('urls_index',{id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
   } else{
     // return res.render('login',{errorMessage:""}); //render instead to have an error message
