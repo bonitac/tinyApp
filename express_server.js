@@ -101,7 +101,7 @@ app.get("/urls", (req, res) => {
 //Add new URL
 app.get("/urls/new", (req, res) => {
   if (users[req.session.user_id]){
-    console.log(urlsForUser(req.session.user_id))
+    // console.log(urlsForUser(req.session.user_id))
     return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
   } else {
     return res.redirect("/login")
@@ -112,15 +112,9 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
   const userID = req.session.user_id;
-  urlDatabase[shortURL] = {};
-  urlDatabase[shortURL].userID = 
-  urlDatabase[shortURL].longURL = req.body.longURL;
-  
-  for (user in users){
-    if (users[user].id == req.session.user_id){
-      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, user:users[req.session.user_id]});
-    }
-  }
+  urlDatabase[shortURL] = {longURL:req.body.longURL, userID: userID};
+  const user = findUser(userID,req);
+  return res.render("urls_show",{url: urlDatabase[shortURL], user:users[req.session.user_id], shortURL: shortURL});
 });
 
 // Delete an existing URL
@@ -168,25 +162,24 @@ app.post("/login", (req,res) =>{
   if (emailLookup(req.body.email,req,res)===0|| req.session.password === ""){
     return res.send(`${res.statusCode}: Email or password are missing`);
   }
-  const loginID = findUser(req.session.email,req);
-  console.log(loginID)
+  const loginID = findUser(req.body.email,req);
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
     req.session.user_id =  users[loginID].id;
     return res.render('urls_index',{user:users[req.session.user_id], id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
-  } else{
-    // return res.render('login',{errorMessage:""}); //render instead to have an error message
-    return res.send("failed to log in")
+  } else if (!bcrypt.compareSync(req.body.password, users[loginID].password)){
+    return res.render('errors',{user:[req.session.user_id], errorMessage: "Incorrect Password"}); //render instead to have an error message
+    // return res.send("failed to log in")
   }
 });
 
-//Add Logout Capability
+//Logout Capability
 app.post("/logout", (req,res)=>{
   req.session = null;
   return res.redirect('/urls')
 })
 
-//Add Registration Page
+// Registration Page
 app.get("/register", (req,res)=>{
   let templateVars = {user: users[req.session.user_id]};
   return res.render('register',templateVars);
