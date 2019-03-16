@@ -16,8 +16,8 @@ const bcrypt = require('bcrypt');
 
 //Global Variables:
 const urlDatabase = {
-  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = { 
@@ -62,7 +62,7 @@ function findUser(parameter,req){
   }
 }
 
-function urlsForUser(id){
+function urlsForUser(id){ //seems to work by itself
   let urls = {};
   for (url in urlDatabase){
     if (urlDatabase[url].userID === id){
@@ -93,27 +93,29 @@ app.get("/urls", (req, res) => {
   if (req.session.id === undefined){
     return res.redirect('/login');
   }
-  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), id: users[req.session.user_id].id, email: users[req.session.user_id].email });
+  return res.render("urls_index", { /*urls: urlsForUser(users[req.session.user_id]),*/shortURL:req.params.id, longURL:urlDatabase[req.params.id], user: users[req.session.user_id]});
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
-  let templateVars = { id: req.session.user_id,
-    shortURL: req.params.shortURL, //needs fix
-    longURL: req.body.longURL,
-    email: users[req.session.user_id].email};
-  return res.render("urls_new", templateVars);
+  if (users[req.session.user_id]){
+    return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
+  } else {
+    return res.redirect("/login")
+  } 
 });
 
 //Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
-  let shortURL = generateRandomString();
+  const shortURL = generateRandomString();
+  const userID = req.session.user_id;
   urlDatabase[shortURL] = {};
+  urlDatabase[shortURL].userID = 
   urlDatabase[shortURL].longURL = req.body.longURL;
-  urlDatabase[shortURL].userID = req.session.user_id;
+  
   for (user in users){
     if (users[user].id == req.session.user_id){
-      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, email:users[user].email});
+      return res.render("urls_show",{shortURL:shortURL, longURL: urlDatabase[shortURL].longURL, user:users[req.session.user_id]});
     }
   }
 });
@@ -130,7 +132,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { id: users.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.session.email};
+  let templateVars = { user: users[req.session.user_id],shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL};
   return res.render("urls_show", templateVars);
 });
 
@@ -149,9 +151,9 @@ app.get("/u/:shortURL", (req, res) => {
 //Go to log-in page
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
-    return res.render("urls_index", {id: users.id, email:req.session.email, urls:urlDatabase});
+    return res.render("urls_index", {user: users[req.session.user_id], id: users.id, email:req.session.email, urls:urlDatabase});
   }
-  return res.render("login",{id: users.id, email:req.session.email});
+  return res.render("login",{user:[req.session.user_id], id: users.id, email:req.session.email});
 })
 
 //Add login capability
@@ -163,7 +165,7 @@ app.post("/login", (req,res) =>{
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
     req.session.user_id =  users[loginID].id;
-    return res.render('urls_index',{id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
+    return res.render('urls_index',{user:users[req.session.user_id], id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
   } else{
     // return res.render('login',{errorMessage:""}); //render instead to have an error message
     return res.send("failed to log in")
@@ -178,7 +180,7 @@ app.post("/logout", (req,res)=>{
 
 //Add Registration Page
 app.get("/register", (req,res)=>{
-  let templateVars = {id: users.id, email: req.session.email};
+  let templateVars = {user: users[req.session.user_id], id: users.id, email: req.session.email};
   return res.render('register',templateVars);
 })
 
@@ -186,7 +188,7 @@ app.get("/register", (req,res)=>{
 app.post("/register", (req,res)=> {
   if (emailLookup(req.body.email,req,res)===1){
     // return res.send("Email already registered") //stick the error messages in the header
-    return res.render('errors',{errorMessage:"Email already registered"})
+    return res.render('errors',{user: users[req.session.user_id], errorMessage:"Email already registered"})
   }
   const id = generateRandomString();
   let newUser = {id:id, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)};
@@ -196,5 +198,5 @@ app.post("/register", (req,res)=> {
 })
 
 app.get("/errors",(req,res) => {
-  return res.render('errors',{errorMessage:"Email already registered"})
+  return res.render('errors',{user: users[req.session.user_id], errorMessage:"Email already registered"})
 })
