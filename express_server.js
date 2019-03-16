@@ -28,8 +28,8 @@ const users = {
   },
  "user2RandomID": {
     id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: bcrypt.hashSync("dishwasher-funk", 10)
+    email: "user2@example.com",  //trying to log in with this one doesn't work
+    password: bcrypt.hashSync("what", 10)
   }
 }
 
@@ -55,12 +55,16 @@ function emailLookup(emailAddress,req,res){
 
 function findUser(parameter,req){
   for (user in users){
-    if (users[user].parameter == req.session.parameter){
+    if (users[user][parameter] === req.body[parameter]){
       // let loginID = users[user].id //ID NOT USER_ID YOU NUMNUT - wait do i need this line at all
         return user;
     }
   }
 }
+
+// findUser("email",users);
+// console.log(users["user2RandomID"].email);
+
 
 function urlsForUser(id){ //seems to work by itself
   let urls = {};
@@ -95,7 +99,6 @@ app.get("/urls", (req, res) => {
   if (req.session.id === undefined){
     return res.redirect('/login');
   } //i think urls for user here needs to  be used better
-  console.log(urlsForUser(req.session.user_id))
   const urls = urlsForUser(req.session.user_id)
   return res.render("urls_index", { urls: urls, user: users[req.session.user_id]});
   //shortURL:req.params.id, longURL:urlDatabase[req.params.id], 
@@ -107,7 +110,7 @@ app.get("/urls/new", (req, res) => {
     const urls = urlsForUser(req.session.user_id);
     const shortURL = req.params.shortURL;
 
-    urlDatabase[shortURL].longURL = req.body.newlongURL;
+    urlDatabase[shortURL].longURL = req.body.newlongURL; //this line needs fixing?
 
     return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
   } else {
@@ -121,7 +124,7 @@ app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
   urlDatabase[shortURL] = {longURL:req.body.longURL, userID: userID};
   const user = findUser(userID,req);
-  return res.render("urls_show",{urls: urlDatabase[shortURL], user:users[req.session.user_id], shortURL: shortURL});
+  return res.render("urls_show",{urls: urlsForUser(user.id), user:users[req.session.user_id], shortURL: shortURL});
 });
 
 // Delete an existing URL
@@ -159,33 +162,49 @@ app.get("/u/:shortURL", (req, res) => {
 //Go to log-in page
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
-    return res.render("urls_index", {user: users[req.session.user_id], urls:urlsForUser(urlDatabase)});
+    // return res.render("urls_index", {user: users[req.session.user_id], urls:urlsForUser(urlDatabase)});
+    return res.redirect('/urls')
   }
-  return res.render("login",{user:[req.session.user_id], id: users.id, email:req.session.email});
+  return res.render("login",{user:[req.session.user_id], });
+  //id: users.id, email:req.session.email
 })
 
 //Add login capability
-app.post("/login", (req,res) =>{
-  if (emailLookup(req.body.email,req,res)===0|| req.session.password === ""){
-    return res.send(`${res.statusCode}: Email or password are missing`);
+app.post("/login", (req,res) => {
+  for(let user in users){
+    if (users[user].email === req.body.email){
+      if (bcrypt.compareSync(req.body.password, users[user].password)){
+        req.session.user_id = users[user].id;
+        return res.redirect('/urls');
+      } else {
+        return res.render('errors', {errorMessage: "Incorrect password. Try again", user:""})
+      }
+    }
+    
   }
-  const loginID = findUser(req.body.email,req);
-  if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
-    // console.log(users[loginID].id)
-    req.session.user_id =  users[loginID].id; //generate cookie
-    //loggedasemail = users[currentuser]['id']
-    return res.render('urls_index',{user:users[req.session.user_id], id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
-  } else if (!bcrypt.compareSync(req.body.password, users[loginID].password)){
-    return res.render('errors',{user:[req.session.user_id], errorMessage: "Incorrect Password"}); //render instead to have an error message
-    // return res.send("failed to log in")
-  }
-});
-
-//Logout Capability
-app.post("/logout", (req,res)=>{
-  req.session = null;
-  return res.redirect('/urls')
+  return res.render('errors', {errorMessage: "Email not found.", user:""})
 })
+
+// app.post("/login", (req,res) =>{
+//   if (emailLookup(req.body.email,req,res)===0|| req.session.password === ""){
+//     return res.send(`${res.statusCode}: Email or password are missing`);
+//   }
+//   const currentUser = findUser(req.body.email,req);
+//   console.log("user",currentUser)
+//   console.log("user",users[currentUser].email)
+//   console.log("password",req.body.password)
+//   console.log("check",bcrypt.compareSync(req.body.password,users[currentUser].password))
+//   if (users[currentUser] && bcrypt.compareSync(req.body.password,users[currentUser].password)){
+//     req.session.user_id =  users[currentUser].id; //generate cookie
+//     //loggedasemail = users[currentuser]['id']
+//     return res.redirect('/urls')
+//     // return res.render('urls_index',{ user:users[currentUser], urls: urlsForUser(currentUser), errorMessage: "Invalid username and password"});
+//     //id: users[currentUser].id, email:req.body.email, user:users[req.session.user_id],
+//   } else if (!bcrypt.compareSync(req.body.password, users[currentUser].password)){
+//     return res.render('errors',{user:[req.session.user_id], errorMessage: "Incorrect Password"});
+//     // return res.send("failed to log in")
+//   }
+// });
 
 // Registration Page
 app.get("/register", (req,res)=>{
@@ -205,5 +224,12 @@ app.post("/register", (req,res)=> {
   const randomID = generateRandomString();
   users[randomID] = {id: randomID, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)}
   req.session.user_id = randomID;
+  return res.redirect('/urls');
+})
+
+//Logout Capability
+app.post("/logout", (req,res)=>{
+  req.session = null;
+  //loggedasemail = ''
   return res.redirect('/urls');
 })
