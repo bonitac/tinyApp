@@ -185,27 +185,6 @@ app.post("/login", (req,res) => {
   return res.render('errors', {errorMessage: "Email not found.", user:""})
 })
 
-// app.post("/login", (req,res) =>{
-//   if (emailLookup(req.body.email,req,res)===0|| req.session.password === ""){
-//     return res.send(`${res.statusCode}: Email or password are missing`);
-//   }
-//   const currentUser = findUser(req.body.email,req);
-//   console.log("user",currentUser)
-//   console.log("user",users[currentUser].email)
-//   console.log("password",req.body.password)
-//   console.log("check",bcrypt.compareSync(req.body.password,users[currentUser].password))
-//   if (users[currentUser] && bcrypt.compareSync(req.body.password,users[currentUser].password)){
-//     req.session.user_id =  users[currentUser].id; //generate cookie
-//     //loggedasemail = users[currentuser]['id']
-//     return res.redirect('/urls')
-//     // return res.render('urls_index',{ user:users[currentUser], urls: urlsForUser(currentUser), errorMessage: "Invalid username and password"});
-//     //id: users[currentUser].id, email:req.body.email, user:users[req.session.user_id],
-//   } else if (!bcrypt.compareSync(req.body.password, users[currentUser].password)){
-//     return res.render('errors',{user:[req.session.user_id], errorMessage: "Incorrect Password"});
-//     // return res.send("failed to log in")
-//   }
-// });
-
 // Registration Page
 app.get("/register", (req,res)=>{
   if (req.session.user_id){
