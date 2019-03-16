@@ -17,14 +17,14 @@ const bcrypt = require('bcrypt');
 //Global Variables:
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 const users = { 
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: bcrypt.hashSync("qwer", 10)
+    password: bcrypt.hashSync("qwerty", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
@@ -70,14 +70,11 @@ function urlsForUser(id){ //seems to work by itself
   let urls = {};
   for (url in urlDatabase){
     if (urlDatabase[url].userID === id){
-      const validURL = urlDatabase[url].longURL;
-      urls[url] = validURL
+      urls[url] = urlDatabase[url].longURL
     }
   }
   return urls;
 }
-
-
 
 //Listening
 app.listen(PORT, () => {
@@ -92,27 +89,19 @@ app.get("/", (req, res) => {
   return res.redirect('/urls');
 });
 
-// console.log(urlsForUser("userRandomID"));
-
 //Index page
 app.get("/urls", (req, res) => {
-  if (req.session.id === undefined){
+  if (req.session.id === ""){
     return res.redirect('/login');
-  } //i think urls for user here needs to  be used better
-  const urls = urlsForUser(req.session.user_id)
-  return res.render("urls_index", { urls: urls, user: users[req.session.user_id]});
-  //shortURL:req.params.id, longURL:urlDatabase[req.params.id], 
+  }
+  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id]});
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
   if (users[req.session.user_id]){
-    const urls = urlsForUser(req.session.user_id);
-    const shortURL = req.params.shortURL;
-
-    urlDatabase[shortURL].longURL = req.body.newlongURL; //this line needs fixing?
-
-    return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
+    console.log(urlsForUser(req.session.user_id));
+    return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id)});
   } else {
     return res.redirect("/login")
   } 
@@ -120,11 +109,13 @@ app.get("/urls/new", (req, res) => {
 
 //Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  const userID = req.session.user_id;
-  urlDatabase[shortURL] = {longURL:req.body.longURL, userID: userID};
-  const user = findUser(userID,req);
-  return res.render("urls_show",{urls: urlsForUser(user.id), user:users[req.session.user_id], shortURL: shortURL});
+  if (req.session.user_id){ //if logged in,
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = {longURL:req.body.longURL, userID: req.session.user_id};
+    return res.render("urls_show",{urls: urlsForUser(req.session.user_id), user:users[req.session.user_id]});
+  }
+  return res.redirect("/login")
+  
 });
 
 // Delete an existing URL
@@ -162,7 +153,6 @@ app.get("/u/:shortURL", (req, res) => {
 //Go to log-in page
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
-    // return res.render("urls_index", {user: users[req.session.user_id], urls:urlsForUser(urlDatabase)});
     return res.redirect('/urls')
   }
   return res.render("login",{user:[req.session.user_id], });
@@ -177,12 +167,11 @@ app.post("/login", (req,res) => {
         req.session.user_id = users[user].id;
         return res.redirect('/urls');
       } else {
-        return res.render('errors', {errorMessage: "Incorrect password. Try again", user:""})
+        return res.render('errors', {errorMessage: "Incorrect password. Try again", user:""});
       }
     }
-    
   }
-  return res.render('errors', {errorMessage: "Email not found.", user:""})
+  return res.render('errors', {errorMessage: "Email not found.", user:""});
 })
 
 // Registration Page
