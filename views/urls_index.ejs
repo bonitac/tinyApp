@@ -18,16 +18,15 @@
     </form>
     <h3> My URLs</h3>
     <% for (let i in url){ %>
-      <li> <a href='/urls/<%=i%>'> <%= i %> </a>: <%= url[i] %> </li>
+      <a href='/urls/<%=i%>'> <%= i %> </a>: <%= url[i] %>
       <div class="row">
-      <form method="GET" action='/urls/<%= i %>/'>
-        &emsp;&emsp;<button style="background-color:rgb(134, 218, 218);color:cornsilk">Edit</button>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
-      </form>
-      <form method="post" action='/urls/<%= i %>/delete'>
-        <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="POST" action=>Delete 🗑</button>
+        <form method="GET" action='/urls/<%= i %>/'>
+          &emsp;<button style="background-color:rgb(134, 218, 218);color:cornsilk">Edit</button>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+        </form>
+        <form method="post" action='/urls/<%= i %>/delete'>
+          <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="POST" action=>Delete 🗑</button>
         </form>
       </div>
-        <% }; %> 
-
+    <% }; %>
   </body>
 </html>
