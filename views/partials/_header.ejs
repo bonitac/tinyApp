@@ -1,6 +1,6 @@
 <body>
   <h1 style="color: rgb(23, 111, 122); font-family: Arial, Helvetica, sans-serif"><strong>Tiny App</strong></h1>
-  <%  if (id === ""){ %>
+  <%  if (user.id === ""){ %>
     <form  action="/login" method="GET">
         <button type="submit" style="background-color:rgb(134, 218, 218);color:cornsilk">Log in</button>
     </form>
@@ -9,7 +9,7 @@
     </form>
     <% } else{ %>
     <form action="/logout" method="POST">
-      Not <%= email %> ?
+      Not <%= user.email %> ?
       <button type="submit" style="background-color:rgb(134, 218, 218);color:cornsilk">Logout</button>
     </form>
     
