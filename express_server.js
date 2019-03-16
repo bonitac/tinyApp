@@ -50,7 +50,7 @@ function emailLookup(emailAddress,req,res){
       return 1; //duplicate email or found email
     }
   }
-  return 0; //email typed in but not found in db
+  return 2; //email typed in but not found in db
 }
 
 function findUser(parameter,req){
@@ -92,13 +92,16 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   if (req.session.id === undefined){
     return res.redirect('/login');
-  }
-  return res.render("urls_index", { /*urls: urlsForUser(users[req.session.user_id]),*/shortURL:req.params.id, longURL:urlDatabase[req.params.id], user: users[req.session.user_id]});
+  } //i think urls for user here needs to  be used better
+  console.log(urlsForUser(req.session.user_id))
+  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id]});
+  //shortURL:req.params.id, longURL:urlDatabase[req.params.id], 
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
   if (users[req.session.user_id]){
+    console.log(urlsForUser(req.session.user_id))
     return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
   } else {
     return res.redirect("/login")
@@ -126,7 +129,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
     delete urlDatabase[req.params.shortURL];
     return res.redirect('/urls');
   } else{
-    return res.send("go log in!") //render to log in page
+    return res.render('errors',{user:users[req.session.user_id], errorMessage : "Can't delete. Go log in!"}) //render to log in page
   }
 });
 
@@ -138,9 +141,13 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //Edit the longURL on an individual page
 app.post("/urls/:shortURL", (req,res) => {
-  const {shortURL} = req.params;
-  urlDatabase[shortURL].longURL = req.body.newlongURL;
-  return res.redirect(`/urls/${shortURL}`);
+  const shortURL = req.params.shortURL;
+  console.log(req.session.user_id)
+  if (urlDatabase[shortURL].userID === req.session.user_id){
+    urlDatabase[shortURL].longURL = req.body.newlongURL;
+    return res.redirect(`/urls/${shortURL}`);
+  }
+  return res.send("not able to edit")
 })
 
 //redirect from individual on click
@@ -151,17 +158,18 @@ app.get("/u/:shortURL", (req, res) => {
 //Go to log-in page
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
-    return res.render("urls_index", {user: users[req.session.user_id], id: users.id, email:req.session.email, urls:urlDatabase});
+    return res.render("urls_index", {user: users[req.session.user_id], urls:urlDatabase});
   }
   return res.render("login",{user:[req.session.user_id], id: users.id, email:req.session.email});
 })
 
 //Add login capability
 app.post("/login", (req,res) =>{
-  if (!emailLookup(req.body.email,req,res)|| req.session.password === ""){
+  if (emailLookup(req.body.email,req,res)===0|| req.session.password === ""){
     return res.send(`${res.statusCode}: Email or password are missing`);
   }
   const loginID = findUser(req.session.email,req);
+  console.log(loginID)
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
     req.session.user_id =  users[loginID].id;
@@ -180,23 +188,19 @@ app.post("/logout", (req,res)=>{
 
 //Add Registration Page
 app.get("/register", (req,res)=>{
-  let templateVars = {user: users[req.session.user_id], id: users.id, email: req.session.email};
+  let templateVars = {user: users[req.session.user_id]};
   return res.render('register',templateVars);
 })
 
 //Registration handler
 app.post("/register", (req,res)=> {
   if (emailLookup(req.body.email,req,res)===1){
-    // return res.send("Email already registered") //stick the error messages in the header
     return res.render('errors',{user: users[req.session.user_id], errorMessage:"Email already registered"})
+  } else if (emailLookup(req.body.email,req,res) === 0 && res.statusCode === 400){
+    return res.render('errors', {user: users[req.session.user_id], errorMessage:"Email left blank!"})
   }
-  const id = generateRandomString();
-  let newUser = {id:id, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)};
-  req.session.user_id = id;
-  users[newUser.id] = newUser;
-  return res.render('urls_index',{id: id, email:req.body.email, urls: urlDatabase});
-})
-
-app.get("/errors",(req,res) => {
-  return res.render('errors',{user: users[req.session.user_id], errorMessage:"Email already registered"})
+  const randomID = generateRandomString();
+  users[randomID] = {id: randomID, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)}
+  req.session.user_id = randomID;
+  return res.render('urls_index',{user: users[req.session.user_id], urls: urlsForUser(urlDatabase)});
 })
