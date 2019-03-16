@@ -15,8 +15,8 @@ app.use(cookieSession({
 const bcrypt = require('bcrypt');
 
 const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+  // b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
+  // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 const users = { 
@@ -40,7 +40,7 @@ function generateRandomString() {
 function emailLookup(emailAddress,req,res){
   if (emailAddress === ""){
     res.statusCode = 400;
-    return 0; //console.log("no email")
+    return 0; //"no email"
   }
   for (user in users){
     if (users[user].email === emailAddress){
@@ -48,13 +48,13 @@ function emailLookup(emailAddress,req,res){
       return 1; //duplicate email or found email
     }
   }
-  return 0; //email typed in but not found
+  return 0; //email typed in but not found in db
 }
 
 function findUser(parameter,req){
   for (user in users){
     if (users[user].parameter == req.session.parameter){
-      let loginID = users[user].id //ID NOT USER_ID YOU NUMNUT
+      // let loginID = users[user].id //ID NOT USER_ID YOU NUMNUT - wait do i need this line at all
         return user;
     }
   }
@@ -78,29 +78,28 @@ app.listen(PORT, () => {
 
 //Home Page
 app.get("/", (req, res) => {
-  if (!req.session){
+  if (!req.session.user_id){
     return res.redirect('/login');
   }
-  console.log(req);
   return res.redirect('/urls');
 });
 
+// console.log(urlsForUser("userRandomID"));
+
 //Index page
 app.get("/urls", (req, res) => {
-  // console.log(urlDatabase["b6UTxQ"].longURL)
   if (req.session.id === undefined){
-    return res.redirect('/login')
+    return res.redirect('/login');
   }
-  return res.render("urls_index", { urls: urlDatabase, id: users.id, email: req.session.email });
+  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), id: users[req.session.user_id].id, email: users[req.session.user_id].email });
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
-  // console.log(req)
   let templateVars = { id: req.session.user_id,
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
-    email: req.session.email};
+    shortURL: req.params.shortURL, //needs fix
+    longURL: req.body.longURL,
+    email: users[req.session.user_id].email};
   return res.render("urls_new", templateVars);
 });
 
@@ -119,25 +118,24 @@ app.post("/urls", (req, res) => {
 
 // Delete an existing URL
 app.post('/urls/:shortURL/delete', (req,res) => {
-  console.log(urlDatabase[req.params.shortURL].userID)
   if (req.session.user_id === urlDatabase[req.params.shortURL].userID){
     delete urlDatabase[req.params.shortURL];
     return res.redirect('/urls');
   } else{
-    res.send("go log in!") //render to log in page
+    return res.send("go log in!") //render to log in page
   }
 });
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { id: req.session.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.session.user_id.email};
+  let templateVars = { id: users.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, email:req.session.email};
   return res.render("urls_show", templateVars);
 });
 
 //Edit the longURL on an individual page
 app.post("/urls/:shortURL", (req,res) => {
   const {shortURL} = req.params;
-  urlDatabase[shortURL] = req.body.newlongURL;
+  urlDatabase[shortURL].longURL = req.body.newlongURL;
   return res.redirect(`/urls/${shortURL}`);
 })
 
@@ -148,17 +146,18 @@ app.get("/u/:shortURL", (req, res) => {
 
 //Go to log-in page
 app.get("/login",(req,res) =>{
-  // console.log(req)
-  let templateVars = {id: users.id, email:req.body.email};
-  return res.render("login",templateVars)
+  if(req.session.user_id){
+    return res.render("urls_index", {id: users.id, email:req.session.email, urls:urlDatabase});
+  }
+  return res.render("login",{id: users.id, email:req.session.email});
 })
 
 //Add login capability
 app.post("/login", (req,res) =>{
-  if (!emailLookup(req.body.email,req,res)|| req.body.password === ""){
+  if (!emailLookup(req.body.email,req,res)|| req.session.password === ""){
     return res.send(`${res.statusCode}: Email or password are missing`);
   }
-  const loginID = findUser(req.body.email,req);
+  const loginID = findUser(req.session.email,req);
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
     req.session.user_id =  users[loginID].id;
@@ -177,18 +176,23 @@ app.post("/logout", (req,res)=>{
 
 //Add Registration Page
 app.get("/register", (req,res)=>{
-  let templateVars = {id: users.id, email:req.body.email};
+  let templateVars = {id: users.id, email: req.session.email};
   return res.render('register',templateVars);
 })
 
 //Registration handler
 app.post("/register", (req,res)=> {
-  if (!emailLookup(req.body.email,req,res)){
-    return res.send("Email already registered") //stick the error messages in the header
+  if (emailLookup(req.body.email,req,res)===1){
+    // return res.send("Email already registered") //stick the error messages in the header
+    return res.render('errors',{errorMessage:"Email already registered"})
   }
   const id = generateRandomString();
-  let newUser = {id:id, email:req.body.email, password:bcrypt.hashSync(req.body.password,10)};
+  let newUser = {id:id, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)};
   req.session.user_id = id;
   users[newUser.id] = newUser;
-  return res.render('urls_index',{id: users.id, email:req.body.email,urls: urlDatabase});
+  return res.render('urls_index',{id: id, email:req.body.email, urls: urlDatabase});
+})
+
+app.get("/errors",(req,res) => {
+  return res.render('errors',{errorMessage:"Email already registered"})
 })
