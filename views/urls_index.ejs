@@ -8,20 +8,26 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
   <title>TinyApp</title>
 </head>
-<body style="font-size:20px; padding:50px;">
+  <body style="font-size:20px; padding:50px;">
     <!-- Add EJS code here -->
     <header>
-        <% include ./partials/_header %>
-      </header>
+      <% include ./partials/_header %>
+    </header>
+    <form  action="/urls/new" method="GET">
+      <button style="background-color:rgb(134, 218, 218);color:cornsilk">Create New TinyURL</button>
+    </form>
+    <h3> My URLs</h3>
+    <% for (let i in url){ %>
+      <li> <a href='/urls/<%=i%>'> <%= i %> </a>: <%= url[i] %> </li>
+      <div style="display:inline-block">
+      <form method="GET" action='/urls/<%= i %>/'>
+        <button style="background-color:rgb(134, 218, 218);color:cornsilk">Edit</button>
+      </form>
+      <form method="post" action='/urls/<%= i %>/delete'>
+        <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="POST" action=>Delete 🗑</button>
+        </form>
+      </div>
+        <% }; %> 
 
-      <h4>  <a href='/urls/new'> Create New TinyURL </a> </h2>
-        <h3> My URLs</h3>
-        <% for (let i in url){ %>
-          <li> <a href='/urls/<%=i%>'> <%= i %> </a>: <%= url[i] %> </li> 
-          <form method="post" action='/urls/<%= i %>/delete'Delete </form>
-          <button style="background-color:rgb(134, 218, 218);color:cornsilk"><form method="POST" action=>Delete 🗑</form>
-          </button>
-          <% }; %> 
-
-</body>
+  </body>
 </html>

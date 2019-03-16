@@ -124,6 +124,9 @@ app.post('/urls/:shortURL/delete', (req,res) => {
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
+  if (!urlDatabase[req.params.shortURL]){
+    return res.render('errors',{errorMessage:"Invalid short URL", user: users[req.session.user_id]})
+  }
   return res.render("urls_show", { url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: req.params.shortURL});
 });
 
