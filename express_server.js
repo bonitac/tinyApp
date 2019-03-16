@@ -205,6 +205,5 @@ app.post("/register", (req,res)=> {
   const randomID = generateRandomString();
   users[randomID] = {id: randomID, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)}
   req.session.user_id = randomID;
-  console.log(users)
-  return res.render('urls_index',{user: users[req.session.user_id], urls: urlsForUser(urlDatabase)});
+  return res.redirect('/urls');
 })
