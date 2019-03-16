@@ -28,8 +28,8 @@ const users = {
   },
  "user2RandomID": {
     id: "user2RandomID", 
-    email: "user2@example.com",  //trying to log in with this one doesn't work
-    password: bcrypt.hashSync("what", 10)
+    email: "user2@example.com",
+    password: bcrypt.hashSync("asdf", 10)
   }
 }
 
@@ -56,17 +56,12 @@ function emailLookup(emailAddress,req,res){
 function findUser(parameter,req){
   for (user in users){
     if (users[user][parameter] === req.body[parameter]){
-      // let loginID = users[user].id //ID NOT USER_ID YOU NUMNUT - wait do i need this line at all
         return user;
     }
   }
 }
 
-// findUser("email",users);
-// console.log(users["user2RandomID"].email);
-
-
-function urlsForUser(id){ //seems to work by itself
+function urlsForUser(id){
   let urls = {};
   for (url in urlDatabase){
     if (urlDatabase[url].userID === id){
@@ -100,7 +95,6 @@ app.get("/urls", (req, res) => {
 //Add new URL
 app.get("/urls/new", (req, res) => {
   if (users[req.session.user_id]){
-    console.log(urlsForUser(req.session.user_id));
     return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id)});
   } else {
     return res.redirect("/login")
@@ -109,7 +103,7 @@ app.get("/urls/new", (req, res) => {
 
 //Added the newly added URL to Index Page
 app.post("/urls", (req, res) => {
-  if (req.session.user_id){ //if logged in,
+  if (req.session.user_id){
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {longURL:req.body.longURL, userID: req.session.user_id};
     return res.render("urls_show",{ url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: shortURL});
@@ -136,12 +130,11 @@ app.get("/urls/:shortURL", (req, res) => {
 //Edit the longURL on an individual page
 app.post("/urls/:shortURL", (req,res) => {
   const shortURL = req.params.shortURL;
-  console.log(req.session.user_id)
   if (urlDatabase[shortURL].userID === req.session.user_id){
     urlDatabase[shortURL].longURL = req.body.newlongURL;
     return res.redirect(`/urls/${shortURL}`);
   }
-  return res.send("not able to edit")
+  return res.render('errors', {errorMessage:"Not allowed to edit this URL", user: users[req.session.user_id]})
 })
 
 //redirect from individual on click
@@ -154,8 +147,7 @@ app.get("/login",(req,res) =>{
   if(req.session.user_id){
     return res.redirect('/urls')
   }
-  return res.render("login",{user:[req.session.user_id], });
-  //id: users.id, email:req.session.email
+  return res.render("login",{user:[req.session.user_id] });
 })
 
 //Add login capability
@@ -199,6 +191,5 @@ app.post("/register", (req,res)=> {
 //Logout Capability
 app.post("/logout", (req,res)=>{
   req.session = null;
-  //loggedasemail = ''
   return res.redirect('/urls');
 })
