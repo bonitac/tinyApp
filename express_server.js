@@ -34,7 +34,7 @@ const users = {
 }
 
 //Functions
-//Generate random string of length 6
+
 function generateRandomString() {
   return Math.floor((1 + Math.random()) * 0x100000).toString(16).substring(0); 
 }
@@ -73,6 +73,8 @@ function urlsForUser(id){ //seems to work by itself
   return urls;
 }
 
+
+
 //Listening
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -94,14 +96,19 @@ app.get("/urls", (req, res) => {
     return res.redirect('/login');
   } //i think urls for user here needs to  be used better
   console.log(urlsForUser(req.session.user_id))
-  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id]});
+  const urls = urlsForUser(req.session.user_id)
+  return res.render("urls_index", { urls: urls, user: users[req.session.user_id]});
   //shortURL:req.params.id, longURL:urlDatabase[req.params.id], 
 });
 
 //Add new URL
 app.get("/urls/new", (req, res) => {
   if (users[req.session.user_id]){
-    // console.log(urlsForUser(req.session.user_id))
+    const urls = urlsForUser(req.session.user_id);
+    const shortURL = req.params.shortURL;
+
+    urlDatabase[shortURL].longURL = req.body.newlongURL;
+
     return res.render("urls_new", {user: users[req.session.user_id], urls: urlsForUser(req.session.user_id), longURL: req.body.longURL,});
   } else {
     return res.redirect("/login")
@@ -114,7 +121,7 @@ app.post("/urls", (req, res) => {
   const userID = req.session.user_id;
   urlDatabase[shortURL] = {longURL:req.body.longURL, userID: userID};
   const user = findUser(userID,req);
-  return res.render("urls_show",{url: urlDatabase[shortURL], user:users[req.session.user_id], shortURL: shortURL});
+  return res.render("urls_show",{urls: urlDatabase[shortURL], user:users[req.session.user_id], shortURL: shortURL});
 });
 
 // Delete an existing URL
@@ -152,7 +159,7 @@ app.get("/u/:shortURL", (req, res) => {
 //Go to log-in page
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
-    return res.render("urls_index", {user: users[req.session.user_id], urls:urlDatabase});
+    return res.render("urls_index", {user: users[req.session.user_id], urls:urlsForUser(urlDatabase)});
   }
   return res.render("login",{user:[req.session.user_id], id: users.id, email:req.session.email});
 })
@@ -165,7 +172,8 @@ app.post("/login", (req,res) =>{
   const loginID = findUser(req.body.email,req);
   if (users[loginID] && bcrypt.compareSync(req.body.password,users[loginID].password)){
     // console.log(users[loginID].id)
-    req.session.user_id =  users[loginID].id;
+    req.session.user_id =  users[loginID].id; //generate cookie
+    //loggedasemail = users[currentuser]['id']
     return res.render('urls_index',{user:users[req.session.user_id], id: users[loginID].id, email:req.body.email, urls: urlDatabase, errorMessage: "Invalid username and password"});
   } else if (!bcrypt.compareSync(req.body.password, users[loginID].password)){
     return res.render('errors',{user:[req.session.user_id], errorMessage: "Incorrect Password"}); //render instead to have an error message
@@ -181,8 +189,10 @@ app.post("/logout", (req,res)=>{
 
 // Registration Page
 app.get("/register", (req,res)=>{
-  let templateVars = {user: users[req.session.user_id]};
-  return res.render('register',templateVars);
+  if (req.session.user_id){
+    return res.render('errors',{errorMessage: "Already logged in", user:'undefined'})
+  }
+  return res.render('register',{user: 'undefined'});
 })
 
 //Registration handler
@@ -195,5 +205,6 @@ app.post("/register", (req,res)=> {
   const randomID = generateRandomString();
   users[randomID] = {id: randomID, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)}
   req.session.user_id = randomID;
+  console.log(users)
   return res.render('urls_index',{user: users[req.session.user_id], urls: urlsForUser(urlDatabase)});
 })
