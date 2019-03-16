@@ -94,7 +94,7 @@ app.get("/urls", (req, res) => {
   if (req.session.id === ""){
     return res.redirect('/login');
   }
-  return res.render("urls_index", { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id]});
+  return res.render("urls_index", { url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: req.params.shortURL});
 });
 
 //Add new URL
@@ -112,7 +112,7 @@ app.post("/urls", (req, res) => {
   if (req.session.user_id){ //if logged in,
     const shortURL = generateRandomString();
     urlDatabase[shortURL] = {longURL:req.body.longURL, userID: req.session.user_id};
-    return res.render("urls_show",{urls: urlsForUser(req.session.user_id), user:users[req.session.user_id]});
+    return res.render("urls_show",{ url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: shortURL});
   }
   return res.redirect("/login")
   
@@ -130,8 +130,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
 
 // Go to the Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { user: users[req.session.user_id],shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL};
-  return res.render("urls_show", templateVars);
+  return res.render("urls_show", { url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: req.params.shortURL});
 });
 
 //Edit the longURL on an individual page
@@ -188,6 +187,8 @@ app.post("/register", (req,res)=> {
     return res.render('errors',{user: users[req.session.user_id], errorMessage:"Email already registered"})
   } else if (emailLookup(req.body.email,req,res) === 0 && res.statusCode === 400){
     return res.render('errors', {user: users[req.session.user_id], errorMessage:"Email left blank!"})
+  } else if (req.body.password === ""){
+    return res.render('errors', {user: users[req.session.user_id], errorMessage:"Password left blank!"})
   }
   const randomID = generateRandomString();
   users[randomID] = {id: randomID, email:req.body.email, password: bcrypt.hashSync(req.body.password,10)}
