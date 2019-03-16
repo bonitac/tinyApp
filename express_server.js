@@ -101,7 +101,7 @@ app.get("/urls/new", (req, res) => {
   } 
 });
 
-//Added the newly added URL to Index Page
+//Added the newly added URL to Index
 app.post("/urls", (req, res) => {
   if (req.session.user_id){
     const shortURL = generateRandomString();
@@ -122,7 +122,7 @@ app.post('/urls/:shortURL/delete', (req,res) => {
   }
 });
 
-// Go to the Individual page for a shortURL
+// Individual page for a shortURL
 app.get("/urls/:shortURL", (req, res) => {
   if (!urlDatabase[req.params.shortURL]){
     return res.render('errors',{errorMessage:"Invalid short URL", user: users[req.session.user_id]})
@@ -130,7 +130,7 @@ app.get("/urls/:shortURL", (req, res) => {
   return res.render("urls_show", { url: urlsForUser(req.session.user_id), user: users[req.session.user_id],shortURL: req.params.shortURL});
 });
 
-//Edit the longURL on an individual page
+//Edit  longURL on individual page
 app.post("/urls/:shortURL", (req,res) => {
   const shortURL = req.params.shortURL;
   if (urlDatabase[shortURL].userID === req.session.user_id){
@@ -140,12 +140,12 @@ app.post("/urls/:shortURL", (req,res) => {
   return res.render('errors', {errorMessage:"Not allowed to edit this URL", user: users[req.session.user_id]})
 })
 
-//redirect from individual on click
+//Redirect from individual page to relevant link
 app.get("/u/:shortURL", (req, res) => {
   return res.redirect(urlDatabase[req.params.shortURL].longURL);
 });
 
-//Go to log-in page
+//Login: Get (render login page)
 app.get("/login",(req,res) =>{
   if(req.session.user_id){
     return res.redirect('/urls')
@@ -153,7 +153,7 @@ app.get("/login",(req,res) =>{
   return res.render("login",{user:[req.session.user_id] });
 })
 
-//Add login capability
+//Login: Post (trying to log in)
 app.post("/login", (req,res) => {
   for(let user in users){
     if (users[user].email === req.body.email){
@@ -191,7 +191,7 @@ app.post("/register", (req,res)=> {
   return res.redirect('/urls');
 })
 
-//Logout Capability
+//Logout
 app.post("/logout", (req,res)=>{
   req.session = null;
   return res.redirect('/urls');
