@@ -4,9 +4,13 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["screenshot description"](#)
-main urls page
-!["screenshot description"](#)
+!["Screenshot of Registration Page"](https://github.com/bonitac/tinyApp/blob/master/docs/register.png)
+!["Screenshot of Login Page"](https://github.com/bonitac/tinyApp/blob/master/docs/login.png)
+!["Screenshot of Index after Login"](https://github.com/bonitac/tinyApp/blob/master/docs/index.png)
+!["Screenshot of Create New URL"](https://github.com/bonitac/tinyApp/blob/master/docs/create-new-url.png)
+!["Screenshot of Editting on Individual Page"](https://github.com/bonitac/tinyApp/blob/master/docs/editting.png)
+!["Screenshot of Individual Page after Editting"](https://github.com/bonitac/tinyApp/blob/master/docs/editted.png)
+!["Screenshot of Index After Editting"](https://github.com/bonitac/tinyApp/blob/master/docs/post-edit-index.png)
 
 ## Dependencies
 
